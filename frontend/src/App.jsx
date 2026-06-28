@@ -1,9 +1,9 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Sidebar from './components/sidebar';
-import Dashboard from './pages/dashboard';
-import Quotation from './pages/quotation';
-import Vendor from './pages/vendor';
-import Compare from './pages/comapre';
+import Sidebar from './components/Sidebar';
+import Dashboard from './pages/Dashboard';
+import Quotation from './pages/Quotation';
+import Vendor from './pages/Vendor';
+import Compare from './pages/Compare';
 
 function App(){
     return (

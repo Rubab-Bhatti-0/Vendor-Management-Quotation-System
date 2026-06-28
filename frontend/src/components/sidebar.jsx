@@ -32,6 +32,8 @@ export default function Sidebar(){
         <div className="bg-indigo-800 rounded-xl p-3 text-indigo-200 text-xs">
         <p className="font-medium text-white mb-1">Teyzix Internship</p>
         <p>FS Task 2</p>
+        <p>TC-INT-18991230-914 </p>
+
         </div>
         </div>
         </aside>
