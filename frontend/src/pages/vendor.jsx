@@ -4,7 +4,7 @@ import Modal from '../components/modal';
 
 const empty = { vendorName: '', companyName: '', email: '', contactNumber: '', businessAddress: '' };
 
-export default function Vendors() {
+export default function Vendor() {
   const [vendors, setVendors]   = useState([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState('');
@@ -30,7 +30,17 @@ export default function Vendors() {
   }, [search]);
 
   const openAdd = () => { setEditing(null); setForm(empty); setShowModal(true); };
-  const openEdit = (v) => { setEditing(v); setForm(v); setShowModal(true); };
+  const openEdit = (v) => { 
+    setEditing(v); 
+    setForm({
+        vendorName: v.vendorName || v.name,
+        companyName: v.companyName || v.company,
+        email: v.email,
+        contactNumber: v.contactNumber || v.contact,
+        businessAddress: v.businessAddress || v.address
+    }); 
+    setShowModal(true); 
+  };
   const closeModal = () => { setShowModal(false); setError(''); };
 
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -56,8 +66,12 @@ export default function Vendors() {
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this vendor?')) return;
-    await deleteVendor(id);
-    fetchVendors(search);
+    try {
+        await delVendor(id);
+        fetchVendors(search);
+    } catch (err) {
+        setError('Failed to delete vendor.');
+    }
   };
 
   return (
@@ -75,111 +89,92 @@ export default function Vendors() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search by name, company or email..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-        />
+      <div className="mb-6">
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          <input
+            type="text"
+            placeholder="Search vendors by name, company or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all shadow-sm"
+          />
+        </div>
       </div>
 
-      {/* Table */}
+      {error && <div className="mb-4 bg-red-50 text-red-600 p-4 rounded-xl border border-red-100">{error}</div>}
+
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-          </div>
-        ) : vendors.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">🏢</p>
-            <p>No vendors found.</p>
-          </div>
+            <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {['Vendor Name','Company','Email','Contact','Address','Actions'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-gray-500 font-medium text-xs uppercase tracking-wide">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {vendors.map(v => (
-                <tr key={v._id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-800">{v.vendorName}</td>
-                  <td className="px-4 py-3 text-gray-600">{v.companyName}</td>
-                  <td className="px-4 py-3 text-gray-600">{v.email}</td>
-                  <td className="px-4 py-3 text-gray-600">{v.contactNumber}</td>
-                  <td className="px-4 py-3 text-gray-600">{v.businessAddress}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openEdit(v)}
-                        className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(v._id)}
-                        className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="bg-gray-50/50 border-b border-gray-50">
+                            {['Vendor Details', 'Company', 'Contact Info', 'Address', 'Actions'].map(h => (
+                                <th key={h} className="text-left px-6 py-4 text-gray-500 font-medium text-xs uppercase tracking-wide">{h}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {vendors.length === 0 ? (
+                            <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-400">No vendors found.</td></tr>
+                        ) : (
+                            vendors.map(v => (
+                                <tr key={v._id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <p className="font-medium text-gray-800">{v.vendorName || v.name}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">{v.email}</p>
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-700 font-medium">{v.companyName || v.company}</td>
+                                    <td className="px-6 py-4 text-gray-600">{v.contactNumber || v.contact || '—'}</td>
+                                    <td className="px-6 py-4 text-gray-600 truncate max-w-xs">{v.businessAddress || v.address || '—'}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={() => openEdit(v)} className="text-indigo-600 hover:text-indigo-800 transition-colors">Edit</button>
+                                            <button onClick={() => handleDelete(v._id)} className="text-red-600 hover:text-red-800 transition-colors">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
         )}
       </div>
 
-      {/* Modal */}
       {showModal && (
-        <Modal title={editing ? 'Edit Vendor' : 'Add Vendor'} onClose={closeModal}>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {error && <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-            {[
-              { name: 'vendorName',       label: 'Vendor Name',     required: true  },
-              { name: 'companyName',      label: 'Company Name',    required: false },
-              { name: 'email',            label: 'Email',           required: true  },
-              { name: 'contactNumber',    label: 'Contact Number',  required: false },
-              { name: 'businessAddress',  label: 'Business Address',required: false },
-            ].map(field => (
-              <div key={field.name}>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  {field.label} {field.required && <span className="text-red-400">*</span>}
-                </label>
-                <input
-                  name={field.name}
-                  value={form[field.name] || ''}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                />
-              </div>
-            ))}
-            <div className="flex gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-medium transition-colors"
-              >
-                {saving ? 'Saving...' : editing ? 'Update Vendor' : 'Add Vendor'}
-              </button>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-medium transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+        <Modal title={editing ? 'Edit Vendor' : 'Add New Vendor'} onClose={closeModal}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Vendor Name</label>
+                        <input type="text" name="vendorName" value={form.vendorName} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                        <input type="text" name="companyName" value={form.companyName} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" required />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <input type="email" name="email" value={form.email} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" required />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
+                    <input type="text" name="contactNumber" value={form.contactNumber} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
+                    <textarea name="businessAddress" value={form.businessAddress} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all h-20" />
+                </div>
+                <div className="pt-4 flex gap-3">
+                    <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" disabled={saving} className="flex-1 px-4 py-2 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50">{saving ? 'Saving...' : 'Save Vendor'}</button>
+                </div>
+            </form>
         </Modal>
       )}
     </div>

@@ -1,4 +1,4 @@
-export default function statCard({label,value,icon,color}){
+export default function StatCard({label,value,icon,color}){
     const colors={
     blue:   'bg-blue-50 border-blue-200 text-blue-600',
     green:  'bg-green-50 border-green-200 text-green-600',

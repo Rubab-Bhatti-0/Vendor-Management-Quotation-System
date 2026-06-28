@@ -1,12 +1,11 @@
-const express=require('express')
-const router=express.Router();
+const express = require('express');
+const router = express.Router();
+const { createVendor, delVendor, updateVendor, searchVendorByID, viewAllVendor } = require('../controllers/vendor.controller');
 
-const{ createVendor,viewAllVendor,updateVendor,delVendor,searchVendorByID}=require('../controllers/vendor.controller')
+router.post('/', createVendor);
+router.put('/:id', updateVendor);
+router.delete('/:id', delVendor);
+router.get('/:id', searchVendorByID);
+router.get('/', viewAllVendor);
 
-router.post('/create',createVendor);
-router.put('/update/:id',updateVendor);
-router.delete('/delete/:id',delVendor);
-router.get('/search/:id',searchVendorByID);
-router.get('/viewAll',viewAllVendor)
-
-module.exports=router
+module.exports = router;

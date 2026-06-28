@@ -1,13 +1,13 @@
-import {useState,UseEffect} from 'react'
+import {useState,useEffect} from 'react'
 import { getStats } from '../api/dashboard'
-import {statCard} from '../components/statsCard'
+import StatCard from '../components/statsCard'
 
-export default function dashboard(){
+export default function Dashboard(){
     const [stats,setStat]= useState(null);
     const [loading,setLoading]=useState(true);
     const [error,setError]=useState('');
 
-    UseEffect(()=>{
+    useEffect(()=>{
         getStats().then(res=>setStat(res.data.data))
         .catch(err=>console.log(err))
         .finally(()=>setLoading(false));
@@ -27,29 +27,29 @@ export default function dashboard(){
             </div>
             <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8'>
             
-                        < statCard label='Total Vendors'  value={stats.totalVendors} icon="🏢" color="indigo"/>
-                        < statCard label='Active Requests'value= {stats.activeQuot} icon="✅" color="green" /> 
-                        < statCard label='Pending Requests'value={stats.PendingQuot} icon="⏳" color="yellow" /> 
-                        <statCard label='Approved Requests'value={stats.approvedQuot} icon="🎯" color="blue"/>
+                        <StatCard label='Total Vendors'  value={stats?.totalVendors} icon="🏢" color="indigo"/>
+                        <StatCard label='Active Requests'value= {stats?.activeQuot} icon="✅" color="green" /> 
+                        <StatCard label='Pending Requests'value={stats?.pendingQuot} icon="⏳" color="yellow" /> 
+                        <StatCard label='Approved Requests'value={stats?.approvedQuot} icon="🎯" color="blue"/>
                     
                         </div>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <h3 className="text-base font-semibold text-gray-700 mb-4">Recent Activity</h3>
-                {stats.recentAct?.length === 0?(
-                    <p className="text-gray-400 text-sm">No rrecent Activity ...</p>
+                {stats?.recentQuotations?.length === 0?(
+                    <p className="text-gray-400 text-sm">No recent Activity ...</p>
                 ):(
                     <ul className="divide-y divide-gray-50">
-                        {stats.recentAct?.map((activity)=>(
+                        {stats?.recentQuotations?.map((activity)=>(
                             <li key={activity._id} className="py-3 flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium text-gray-800">{activity.title}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5">{activity.vendor?.name||'Unknown vendor'}</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">{activity.vendorReference?.name||'Unknown vendor'}</p>
                                 
                             </div>
                             <span className={`text-xs px-3 py-1 rounded-full font-medium
-                  ${q.status === 'approved' ? 'bg-green-100 text-green-700'
-                  : q.status === 'active'   ? 'bg-blue-100 text-blue-700'
-                  : q.status === 'rejected' ? 'bg-red-100 text-red-700'
+                  ${activity.status === 'approved' ? 'bg-green-100 text-green-700'
+                  : activity.status === 'active'   ? 'bg-blue-100 text-blue-700'
+                  : activity.status === 'rejected' ? 'bg-red-100 text-red-700'
                   : 'bg-yellow-100 text-yellow-700'}`}>{activity.status}</span>
                             </li>
                         ))}
@@ -62,4 +62,3 @@ export default function dashboard(){
     );
     
 }
-

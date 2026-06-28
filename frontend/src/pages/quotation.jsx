@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getQuotations, createQuotation, updateStatus, delQuotation } from '../api/quotation';
-import { getvendors } from '../api/vendor';
+import { getQuotations, createQuotation, updateStatus as updateQuotationStatus, delQuotation } from '../api/quotation';
+import { getVendors } from '../api/vendor';
 import Modal from '../components/modal';
 
 const empty = { title: '', description: '', vendorReference: '', amount: '', status: 'pending' };
@@ -13,7 +13,7 @@ const statusStyle = {
   rejected: 'bg-red-100 text-red-700',
 };
 
-export default function Quotations() {
+export default function Quotation() {
   const [quotations, setQuotations] = useState([]);
   const [vendors, setVendors]       = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -63,7 +63,7 @@ export default function Quotations() {
     setSaving(true);
     try {
       if (editing) {
-        await updateQuotation(editing._id, form);
+        await updateQuotationStatus(editing._id, form);
       } else {
         await createQuotation(form);
       }
@@ -78,8 +78,12 @@ export default function Quotations() {
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this quotation?')) return;
-    await deleteQuotation(id);
-    fetchQuotations(filterStatus);
+    try {
+        await delQuotation(id);
+        fetchQuotations(filterStatus);
+    } catch (err) {
+        setError('Failed to delete quotation.');
+    }
   };
 
   return (
@@ -97,175 +101,94 @@ export default function Quotations() {
         </button>
       </div>
 
-      {/* Filter by status */}
-      <div className="flex gap-2 mb-4 flex-wrap">
-        {['', ...statuses].map(s => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors
-              ${filterStatus === s
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-          >
-            {s === '' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-          </button>
-        ))}
-      </div>
+      {error && <div className="mb-4 bg-red-50 text-red-600 p-4 rounded-xl border border-red-100">{error}</div>}
 
-      {/* Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-4 border-b border-gray-50 flex items-center gap-4 overflow-x-auto">
+            <button onClick={() => setFilter('')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterStatus === '' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'}`}>All</button>
+            {statuses.map(s => (
+                <button key={s} onClick={() => setFilter(s)} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${filterStatus === s ? 'bg-indigo-50 text-indigo-700' : 'text-gray-500 hover:bg-gray-50'}`}>{s}</button>
+            ))}
+        </div>
+
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-          </div>
-        ) : quotations.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="text-4xl mb-3">📄</p>
-            <p>No quotations found.</p>
-          </div>
+            <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {['Title','Vendor','Amount','Date','Status','Actions'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-gray-500 font-medium text-xs uppercase tracking-wide">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {quotations.map(q => (
-                <tr key={q._id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-800">{q.title}</td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {q.vendorReference?.vendorName || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-800 font-medium">
-                    PKR {Number(q.amount).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {new Date(q.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyle[q.status]}`}>
-                      {q.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openEdit(q)}
-                        className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(q._id)}
-                        className="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="bg-gray-50/50 border-b border-gray-50">
+                            {['Title', 'Vendor', 'Amount', 'Status', 'Actions'].map(h => (
+                                <th key={h} className="text-left px-6 py-4 text-gray-500 font-medium text-xs uppercase tracking-wide">{h}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {quotations.length === 0 ? (
+                            <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-400">No quotations found.</td></tr>
+                        ) : (
+                            quotations.map(q => (
+                                <tr key={q._id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <p className="font-medium text-gray-800">{q.title}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{q.description}</p>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <p className="text-gray-700 font-medium">{q.vendorReference?.vendorName || q.vendorReference?.name || '—'}</p>
+                                        <p className="text-xs text-gray-400">{q.vendorReference?.companyName || q.vendorReference?.company || '—'}</p>
+                                    </td>
+                                    <td className="px-6 py-4 font-bold text-gray-800">PKR {Number(q.amount).toLocaleString()}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyle[q.status]}`}>{q.status}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={() => openEdit(q)} className="text-indigo-600 hover:text-indigo-800 transition-colors">Edit</button>
+                                            <button onClick={() => handleDelete(q._id)} className="text-red-600 hover:text-red-800 transition-colors">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
         )}
       </div>
 
-      {/* Modal */}
       {showModal && (
-        <Modal title={editing ? 'Edit Quotation' : 'New Quotation'} onClose={closeModal}>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {error && <p className="text-red-500 text-sm bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Title <span className="text-red-400">*</span>
-              </label>
-              <input
-                name="title"
-                value={form.title}
-                onChange={handleChange}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                rows={2}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Vendor <span className="text-red-400">*</span>
-              </label>
-              <select
-                name="vendorReference"
-                value={form.vendorReference}
-                onChange={handleChange}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
-              >
-                <option value="">Select vendor...</option>
-                {vendors.map(v => (
-                  <option key={v._id} value={v._id}>{v.vendorName} — {v.companyName}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Amount (PKR) <span className="text-red-400">*</span>
-              </label>
-              <input
-                name="amount"
-                type="number"
-                value={form.amount}
-                onChange={handleChange}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
-              >
-                {statuses.map(s => (
-                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm font-medium transition-colors"
-              >
-                {saving ? 'Saving...' : editing ? 'Update' : 'Create Quotation'}
-              </button>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-medium transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+        <Modal title={editing ? 'Edit Quotation' : 'Add New Quotation'} onClose={closeModal}>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input type="text" name="title" value={form.title} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" required />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
+                    <select name="vendorReference" value={form.vendorReference} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" required>
+                        <option value="">Select Vendor</option>
+                        {vendors.map(v => <option key={v._id} value={v._id}>{v.vendorName || v.name} ({v.companyName || v.company})</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount (PKR)</label>
+                    <input type="number" name="amount" value={form.amount} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" required />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select name="status" value={form.status} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        {statuses.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="description" value={form.description} onChange={handleChange} className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all h-24" />
+                </div>
+                <div className="pt-4 flex gap-3">
+                    <button type="button" onClick={closeModal} className="flex-1 px-4 py-2 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" disabled={saving} className="flex-1 px-4 py-2 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50">{saving ? 'Saving...' : 'Save Quotation'}</button>
+                </div>
+            </form>
         </Modal>
       )}
     </div>

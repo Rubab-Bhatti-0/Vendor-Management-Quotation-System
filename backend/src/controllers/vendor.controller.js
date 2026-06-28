@@ -1,133 +1,114 @@
-const vendor=require('../models/vendor.model')
+const vendorModel=require('../models/vendor.model')
 
 const createVendor=async(req,res,next)=>{
-    try{
-        const{ name, email}=req.body
-        const isVendorExist=await vendor.findOne({
-            $or:[
-                {name},
-                {email}
-            ]
-        })
+    try {
+        const {vendorName, companyName, email, contactNumber, businessAddress} = req.body;
+        const mappedData = {
+            name: vendorName || req.body.name,
+            company: companyName || req.body.company,
+            email: email,
+            contact: contactNumber || req.body.contact,
+            address: businessAddress || req.body.address
+        };
+
+        const isVendorExist=await vendorModel.findOne({email});
         if(isVendorExist){
             return res.status(209).json({
-                message:"Vendor already exists"
+                message:"vendor already exists"
             })
         }
-    const v=await vendor.create(req.body)
-     if(!v){
-            return res.status(404).json({
-                message:"Not update "
-            });
-        }
-    return res.status(201).json({
-        message: "vendor created successfully!",
-        v
-    })
-
-    }catch(err){
-        next(err)
+        const v=await vendorModel.create(mappedData)
+        return res.status(201).json({
+            message: "vendor created successfully!",
+            data: v
+        })
+    } catch (error) {
+        next(error)
     }
-
 }
 
 const viewAllVendor=async(req,res,next)=>{
     try {
-        const {search}=req.query;
-        const filter =search ? {
-            $or:[
-                { name:{$regex : search , $options: i}},
-                {company:{$regex:search, $options:i}},
-                {email:{$regex:search,$options:i}}
-            ]
-        }:{};
-        const v= await vendor.find(filter).sort({createdAt:-1});
+        const { search } = req.query;
+        let filter = {};
+        if (search) {
+            filter = {
+                $or: [
+                    { name: { $regex: search, $options: 'i' } },
+                    { company: { $regex: search, $options: 'i' } },
+                    { email: { $regex: search, $options: 'i' } }
+                ]
+            };
+        }
+        const vendors = await vendorModel.find(filter).sort({ createdAt: -1 });
         res.status(200).json({
-            message:"Vendors found",
-            v
+            message: "All vendors are: ",
+            data: vendors
         })
-        
-    } catch (error) {
-        next(error)
-        
+    } catch (err) {
+        next(err);
     }
-
-
 }
 
 const updateVendor=async(req,res,next)=>{
-
-    try{
-        const{ name, email}=req.body
-        const isVendorExist=await vendor.findOne({
-            $or:[
-                {contact},
-                {email}
-            ]
-        })
-        if(isVendorExist){
-            return res.status(209).json({
-                message:"Vendor already exists"
-            })
-        }
+    try {
         const id=req.params.id;
-        const v=await vendor.findByIdAndUpdate(id,req.body);
+        const {vendorName, companyName, email, contactNumber, businessAddress} = req.body;
+        const mappedData = {
+            name: vendorName || req.body.name,
+            company: companyName || req.body.company,
+            email: email,
+            contact: contactNumber || req.body.contact,
+            address: businessAddress || req.body.address
+        };
+        const v=await vendorModel.findByIdAndUpdate(id, mappedData, { new: true });
         if(!v){
             return res.status(404).json({
-                message:"Not update "
-            });
-        }
-        res.status(200).json({
-                message:" update "
-            })
-
-
-    }catch(err){
-        next(err)
-    }
-
-
-}
-
-const delVendor=async(req,res,next)=>{
-
-    try{
-        const id=req.params.id
-        const v= await vendor.findByIdAndDelete(id,req.body)
-        if(!v){
-           return res.status(404).json({
-                message:"Error in deletion the vendor",
+                message:"vendor not found"
             })
         }
         res.status(200).json({
-            message:"vendor deleted successfully!"
+            message:"vendor updated successfully!",
+            data: v
         })
-    }catch(err){
-        next(err)
+    } catch (error) {
+        next(error)
     }
-
-
 }
 
 const searchVendorByID=async(req,res,next)=>{
     try {
         const id=req.params.id;
-        const v=await vendor.findById(id);
+        const v=await vendorModel.findById(id);
         if(!v){
             return res.status(404).json({
-                message:"Vendor not found"
+                message:"vendor not found"
             })
         }
         res.status(200).json({
-            message:"Vendors found",
-            v
+            message:"vendor found",
+            data: v
         })
-
     } catch (error) {
         next(error)
-        
     }
+}
 
+const delVendor=async(req,res,next)=>{
+    try {
+        const id=req.params.id;
+        const v=await vendorModel.findByIdAndDelete(id);
+        if(!v){
+            return res.status(404).json({
+                message:"vendor not found"
+            })
+        }
+        res.status(200).json({
+            message:"vendor deleted successfully!"
+        })
+    } catch (err) {
+        next(err);
+    }
 }
 
 module.exports={createVendor,delVendor,updateVendor,searchVendorByID,viewAllVendor}

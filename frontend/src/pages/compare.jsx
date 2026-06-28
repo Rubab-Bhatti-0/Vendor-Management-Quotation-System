@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { compareQuotations } from '../api/quotation';
+import { compareQuotation } from '../api/quotation';
 
 export default function Compare() {
   const [groups, setGroups]   = useState([]);
@@ -7,7 +7,7 @@ export default function Compare() {
   const [error, setError]     = useState('');
 
   useEffect(() => {
-    compareQuotations()
+    compareQuotation()
       .then(res => setGroups(res.data.data))
       .catch(() => setError('Failed to load comparison data.'))
       .finally(() => setLoading(false));
@@ -63,10 +63,10 @@ export default function Compare() {
                         className={`transition-colors ${q.isCheapest ? 'bg-green-50' : 'hover:bg-gray-50'}`}
                       >
                         <td className="px-4 py-3 font-medium text-gray-800">
-                          {q.vendorReference?.vendorName || '—'}
+                          {q.vendorReference?.vendorName || q.vendorReference?.name || '—'}
                         </td>
                         <td className="px-4 py-3 text-gray-600">
-                          {q.vendorReference?.companyName || '—'}
+                          {q.vendorReference?.companyName || q.vendorReference?.company || '—'}
                         </td>
                         <td className={`px-4 py-3 font-bold text-base ${q.isCheapest ? 'text-green-700' : 'text-gray-800'}`}>
                           PKR {Number(q.amount).toLocaleString()}

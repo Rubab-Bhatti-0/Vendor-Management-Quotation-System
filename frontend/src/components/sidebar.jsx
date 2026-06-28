@@ -2,11 +2,11 @@ import { NavLink } from "react-router-dom";
 
 const links=[
     { to:'/' , label :'Dashboard' , icon:'📊' },
-    {to:'/vendors',label:'Vendors', icon:'🏢'},
-    {to:'/quotations',label:'Quotations',icon:'📄'},
+    {to:'/vendor',label:'Vendors', icon:'🏢'},
+    {to:'/quotation',label:'Quotations',icon:'📄'},
     {to:'/compare',label:'Compare',icon:'⚖️'}
 ];
-export default function sideBar(){
+export default function Sidebar(){
     return(
         <aside className="w-60 bg-indigo-900 min-h-screen flex flex-col p-4 shadow-xl">
         <div className="mb-10 mt-2 px-2">

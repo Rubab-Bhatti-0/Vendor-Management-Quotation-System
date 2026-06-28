@@ -3,15 +3,15 @@ const quotationModel=require('../models/quotation.model')
 
 const getStats= async (req,res, next)=>{
    try{
-    const [ totatalVendors, activeQuot,PendingQuot,approvedQuot,recentAct ] = await Promise.all([
+    const [ totalVendors, activeQuot,pendingQuot,approvedQuot,recentQuotations ] = await Promise.all([
         vendorModel.countDocuments(),
         quotationModel.countDocuments({status:"active"}),
         quotationModel.countDocuments({status:"pending"}),
         quotationModel.countDocuments({status:"approved"}),
-        vendorModel.find().sort({createdAt:-1}).limit(5)]);
+        quotationModel.find().populate('vendorReference', 'name company vendorName companyName').sort({createdAt:-1}).limit(5)]);
         res.status(200).json({
             message: "Data fetched successfully!",
-            data: {totatalVendors,activeQuot,PendingQuot,approvedQuot,recentAct}
+            data: {totalVendors,activeQuot,pendingQuot,approvedQuot,recentQuotations}
         
         })
     

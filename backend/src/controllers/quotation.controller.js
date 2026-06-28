@@ -18,8 +18,8 @@ const createQuotation=async(req,res,next)=>{
                 }
             const v=await quotation.create(req.body)
             return res.status(201).json({
-                message: "vendor created successfully!",
-                v
+                message: "Quotation created successfully!",
+                data: v
             })
         
     } catch (error) {
@@ -33,14 +33,15 @@ const createQuotation=async(req,res,next)=>{
 const updateStatus=async(req,res,next)=>{
     try {
         const id=req.params.id;
-        const v=await quotation.findByIdAndUpdate(id,req.body);
+        const v=await quotation.findByIdAndUpdate(id,req.body, { new: true });
         if(!v){
         return res.status(404).json({
         message:"Not update "
      });
 }
         res.status(200).json({
-         message:" update "
+         message:" update ",
+         data: v
                     })
         
         
@@ -56,10 +57,10 @@ const getAllQuotation=async(req,res,next)=>{
     const { status } = req.query;
     const filter = status ? { status } : {};
     const quotations = await quotation.find(filter)
-      .populate('vendor', 'name company email')
+      .populate('vendorReference', 'name company email vendorName companyName')
       .sort({ createdAt: -1 });
     res.status(200).json({
-         message:" All Quotations are: ",quotations })
+         message:" All Quotations are: ", data: quotations })
     
   } catch (err) { next(err); }
 };
@@ -68,7 +69,7 @@ const getAllQuotation=async(req,res,next)=>{
 const getQuotationByID=async(req,res,next)=>{
     try {
             const id=req.params.id;
-            const v=await quotation.findById(id);
+            const v=await quotation.findById(id).populate('vendorReference');
             if(!v){
                 return res.status(404).json({
                     message:"quotation not found"
@@ -76,7 +77,7 @@ const getQuotationByID=async(req,res,next)=>{
             }
             res.status(200).json({
                 message:"Quotation found",
-                v
+                data: v
             })
     
         } catch (error) {
@@ -90,7 +91,7 @@ const compareQuotation = async (req, res, next) => {
   try {
     const quotations = await quotation
       .find()
-      .populate('vendorReference', 'vendorName companyName')  // field: vendorReference, ref: vendor
+      .populate('vendorReference', 'name company email vendorName companyName')
       .sort({ amount: 1 });
 
     const groups = {};
@@ -116,7 +117,7 @@ const compareQuotation = async (req, res, next) => {
 const delQuotation=async(req,res,next)=>{
     try{
             const id=req.params.id
-            const v= await quotation.findByIdAndDelete(id,req.body)
+            const v= await quotation.findByIdAndDelete(id)
             if(!v){
                return res.status(404).json({
                     message:"Error in deletion the quotation",
