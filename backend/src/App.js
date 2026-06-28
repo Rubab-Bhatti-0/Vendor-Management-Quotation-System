@@ -7,7 +7,7 @@ const errorHandler = require('./middlewares/errorHandler.middleware');
 
 const App=express()
 App.use(cors({
-  origin: 'http://localhost:5173'  // Vite's default port
+  origin: '*'  // Vite's default port
 }));
 App.use(express.json());
 
